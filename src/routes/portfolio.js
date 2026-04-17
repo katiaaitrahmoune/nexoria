@@ -10,9 +10,10 @@ router.get('/summary', (req, res) => {
     const p = loadPortfolio();
     res.json({
       totalContracts: p.totalContracts,
-      totalCapital:   Math.round(p.totalCapital),
-      totalPrime:     Math.round(p.totalPrime),
-      dataQuality:    p.dataQuality,
+      totalCapital: Math.round(p.totalCapital),
+      totalPrime: Math.round(p.totalPrime),
+      byYear: p.byYear,
+      dataQuality: p.dataQuality,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -30,11 +31,11 @@ router.get('/by-zone', (req, res) => {
     const totalCapital = data.reduce((s, d) => s + d.capital, 0);
     const result = data.map(d => ({
       ...d,
-      capital:    Math.round(d.capital),
-      prime:      Math.round(d.prime),
+      capital: Math.round(d.capital),
+      prime: Math.round(d.prime),
       pctCapital: totalCapital > 0 ? parseFloat((d.capital / totalCapital * 100).toFixed(2)) : 0,
-      color:      ZONE_ACCELERATION[d.zone]?.color || '#888',
-      label:      ZONE_ACCELERATION[d.zone]?.label || d.zone,
+      color: ZONE_ACCELERATION[d.zone]?.color || '#888',
+      label: ZONE_ACCELERATION[d.zone]?.label || d.zone,
     })).sort((a, b) => ZONE_ORDER[b.zone] - ZONE_ORDER[a.zone]);
 
     res.json(result);
@@ -43,53 +44,36 @@ router.get('/by-zone', (req, res) => {
   }
 });
 
-// GET /api/portfolio/by-wilaya?year=2025
-router.get('/by-wilaya', (req, res) => {
+// GET /api/portfolio/contracts?year=2025&wilaya=ALGER&type=Industrielle
+router.get('/contracts', (req, res) => {
   try {
-    const year = req.query.year ? parseInt(req.query.year) : null;
+    const { year, wilaya, type, zone } = req.query;
     const p = loadPortfolio();
-    let data = p.byWilaya;
-    if (year) data = data.filter(d => d.year === year);
-
-    const result = data.map(d => ({
-      ...d,
-      capital: Math.round(d.capital),
-      prime:   Math.round(d.prime),
-      color:   ZONE_ACCELERATION[d.zone]?.color || '#888',
-    })).sort((a, b) => b.capital - a.capital);
-
-    res.json(result);
+    
+    let contracts = p.contracts;
+    
+    if (year) contracts = contracts.filter(c => c.year === parseInt(year));
+    if (wilaya) contracts = contracts.filter(c => c.wilaya === wilaya.toUpperCase());
+    if (type) contracts = contracts.filter(c => c.type === type);
+    if (zone) contracts = contracts.filter(c => c.zone === zone);
+    
+    res.json({
+      count: contracts.length,
+      contracts: contracts.slice(0, 100), // Limite pour performance
+      totalCapital: Math.round(contracts.reduce((s, c) => s + c.capital, 0)),
+      totalPrime: Math.round(contracts.reduce((s, c) => s + c.prime, 0)),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/portfolio/trends
-router.get('/trends', (req, res) => {
+// GET /api/portfolio/wilayas
+router.get('/wilayas', (req, res) => {
   try {
     const p = loadPortfolio();
-    const zones = ['0', 'I', 'IIa', 'IIb', 'III'];
-    const years = [2023, 2024, 2025];
-
-    const trends = zones.map(zone => {
-      const series = years.map(year => {
-        const entry = p.byZoneYear.find(d => d.zone === zone && d.year === year);
-        return {
-          year,
-          contracts: entry?.contracts || 0,
-          capital:   Math.round(entry?.capital || 0),
-          prime:     Math.round(entry?.prime || 0),
-        };
-      });
-      return {
-        zone,
-        label: ZONE_ACCELERATION[zone]?.label || zone,
-        color: ZONE_ACCELERATION[zone]?.color || '#888',
-        series,
-      };
-    });
-
-    res.json(trends);
+    const wilayas = [...new Set(p.contracts.map(c => c.wilaya))].sort();
+    res.json(wilayas);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -201,9 +201,7 @@ export function loadPortfolio() {
   // Adjust path to where your Excel files are
   const dataDir = path.join(__dirname, '../../data');
   const files = [
-    { path: path.join(dataDir, 'catnat_2023.xlsx'), year: 2023 },
-    { path: path.join(dataDir, 'Catnat_2024.xlsx'), year: 2024 },
-    { path: path.join(dataDir, 'catnat_2025.xlsx'), year: 2025 },
+    { path: path.join(dataDir, 'CATNAT_2023_2025.xlsx'), year: 2023 },
   ];
 
   const allContracts = [];
