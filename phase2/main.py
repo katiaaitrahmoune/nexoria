@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field, model_validator
 # ─────────────────────────────────────────────────────────────────────────────
 # Load model
 # ─────────────────────────────────────────────────────────────────────────────
-MODEL_PATH = Path(__file__).parent / "model.pkl"
+MODEL_PATH = Path(__file__).parent / "risk_assessment.pkl"
 with open(MODEL_PATH, "rb") as f:
     model = pickle.load(f)
 
