@@ -4,7 +4,7 @@ import pool from './src/config/db.js';
 
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static("public"));
+
 pool.connect()
   .then(client => {
     console.log('✅ Database connected successfully');
