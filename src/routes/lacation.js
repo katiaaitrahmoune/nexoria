@@ -2,11 +2,6 @@ import express from 'express';
 import pool from '../config/db.js';
 
 const router = express.Router();
-
-// ============================================================
-// GET /api/locations/wilayas
-// Returns all unique wilayas
-// ============================================================
 router.get('/wilayas', async (req, res) => {
   try {
     const query = `
@@ -32,10 +27,6 @@ router.get('/wilayas', async (req, res) => {
   }
 });
 
-// ============================================================
-// GET /api/locations/communes
-// Returns all unique communes
-// ============================================================
 router.get('/communes', async (req, res) => {
   try {
     const query = `
@@ -60,11 +51,6 @@ router.get('/communes', async (req, res) => {
     });
   }
 });
-
-// ============================================================
-// GET /api/locations/wilayas/:wilaya/communes
-// Returns all communes for a specific wilaya
-// ============================================================
 router.get('/wilayas/:wilaya/communes', async (req, res) => {
   try {
     const { wilaya } = req.params;

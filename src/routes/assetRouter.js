@@ -8,7 +8,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express.Router();
-const CSV_PATH = path.join(__dirname, '../../public/assurance.csv');
+
+// ✅ FIXED: Correct path to project root
+const PROJECT_ROOT = path.resolve(__dirname, '../..');
+const CSV_PATH = path.join(PROJECT_ROOT, 'public', 'addassurance.csv');
 
 // ── Calcul damage_ratio selon RPA chap.9 ──────────────────
 function computeDamageRatio({
@@ -82,11 +85,14 @@ function computeDamageRatio({
     damage_ratio:    parseFloat(Math.min(ratio, 0.95).toFixed(4)),
     rpa_nb_violations: violations.length,
     rpa_conforme:    violations.length === 0 ? 1 : 0,
-    violations,      // liste détaillée
+    violations,
   };
 }
 
+// ============================================================
 // POST /api/assets/add
+// Ajouter une nouvelle assurance (REPLACE le fichier)
+// ============================================================
 router.post('/add', (req, res) => {
   try {
     const {
@@ -131,9 +137,25 @@ router.post('/add', (req, res) => {
 
     const expected_payout = Math.round(sum_insured * damage_ratio);
 
+    // ── CSV Headers ─────────────────────────────────────────
+    const headers = [
+      'NUMERO_POLICE', 'wilaya_id', 'WILAYA', 'COMMUNE',
+      'zone_sismique', 'zone_ord', 'type_batiment', 'building_class',
+      'sum_insured', 'prime_nette', 'taux_prime',
+      'DATE_EFFET', 'DATE_EXPIRATION', 'duree',
+      'nb_niveaux', 'hauteur', 'longueur', 'largeur',
+      'surface_plancher', 'aire_murs', 'densite_murs', 'epaisseur_mur',
+      'distance_entre_murs', 'ratio_ll', 'ratio_hl',
+      'resistance_mortier', 'resistance_beton',
+      'age_construction', 'age_batiment',
+      'rpa_conforme', 'rpa_nb_violations',
+      'viol_hauteur', 'viol_etages', 'viol_ratio_plan', 'viol_densite_murs',
+      'viol_epaisseur', 'viol_mortier', 'viol_beton', 'viol_dist_murs',
+      'tax_rate', 'damage_ratio', 'expected_payout'
+    ];
+
     // ── Construire la ligne CSV ─────────────────────────────
-    const viol = violations;
-    const newRow = [
+    const rowData = [
       NUMERO_POLICE, wilaya_id, wilayaClean, communeClean,
       zone_sismique, zone_ord, type_batiment, building_class,
       sum_insured, prime_nette, taux_prime,
@@ -146,34 +168,69 @@ router.post('/add', (req, res) => {
       resistance_mortier, resistance_beton,
       age_construction || '', age_batiment,
       rpa_conforme, rpa_nb_violations,
-      viol.includes('viol_hauteur')      ? 1 : 0,
-      viol.includes('viol_etages')       ? 1 : 0,
-      viol.includes('viol_ratio_plan')   ? 1 : 0,
-      viol.includes('viol_densite_murs') ? 1 : 0,
-      viol.includes('viol_epaisseur')    ? 1 : 0,
-      viol.includes('viol_mortier')      ? 1 : 0,
-      viol.includes('viol_beton')        ? 1 : 0,
-      viol.includes('viol_dist_murs')    ? 1 : 0,
+      violations.includes('viol_hauteur') ? 1 : 0,
+      violations.includes('viol_etages') ? 1 : 0,
+      violations.includes('viol_ratio_plan') ? 1 : 0,
+      violations.includes('viol_densite_murs') ? 1 : 0,
+      violations.includes('viol_epaisseur') ? 1 : 0,
+      violations.includes('viol_mortier') ? 1 : 0,
+      violations.includes('viol_beton') ? 1 : 0,
+      violations.includes('viol_dist_murs') ? 1 : 0,
       tax_rate, damage_ratio, expected_payout,
-    ].join(',');
+    ];
 
-    fs.appendFileSync(CSV_PATH, '\n' + newRow, 'utf8');
+    // ── Créer le contenu CSV complet (headers + data) ──────
+    const csvContent = headers.join(',') + '\n' + rowData.join(',');
+
+    // ✅ Ensure directory exists
+    const dir = path.dirname(CSV_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`📁 Created directory: ${dir}`);
+    }
+
+    // ✅ REPLACE the entire file (not append)
+    fs.writeFileSync(CSV_PATH, csvContent, 'utf8');
+    console.log(`✅ CSV file saved to: ${CSV_PATH}`);
 
     res.status(201).json({
-      message: 'Asset ajouté avec succès',
+      message: 'Asset ajouté avec succès (fichier remplacé)',
+      filePath: CSV_PATH,
       computed: {
         zone_sismique,
         damage_ratio,
         expected_payout,
         rpa_conforme: rpa_conforme === 1,
         rpa_nb_violations,
-        violations,          // ← ce qui a été violé exactement
+        violations,
       },
-      row: newRow,
+      csv_content: csvContent,
     });
 
   } catch (err) {
     console.error('Add asset error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================================
+// GET /api/assets/read
+// Lire le fichier CSV
+// ============================================================
+router.get('/read', (req, res) => {
+  try {
+    if (!fs.existsSync(CSV_PATH)) {
+      return res.status(404).json({ error: 'Fichier non trouvé', path: CSV_PATH });
+    }
+    
+    const content = fs.readFileSync(CSV_PATH, 'utf8');
+    res.json({
+      success: true,
+      path: CSV_PATH,
+      content: content,
+      lines: content.split('\n')
+    });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
