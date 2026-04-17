@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from inssurance_map import build_commune_stats
+from phase1.inssurance_map import build_commune_stats
 
 app = FastAPI()
 
