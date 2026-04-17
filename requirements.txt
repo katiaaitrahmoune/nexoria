@@ -2,6 +2,8 @@ fastapi
 uvicorn
 pandas
 geopandas
-requests
 shapely
-pyogrio
+requests
+fiona
+pyproj
+rtree
