@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import geopandas as gpd
 import requests # Added for downloading
+from pathlib import Path
 
 def download_file(url, local_path):
     """Helper to download a file if a URL is provided."""
@@ -19,12 +20,12 @@ def download_file(url, local_path):
             return local_path
         else:
             raise Exception(f"❌ Failed to download file and no local cache found: {e}")
-
+BASE_DIR = Path(__file__).resolve().parent
 def build_commune_stats(
     insurance_input, # Renamed to represent it could be a URL or Path
-    communes_json_path="../DATA/Commune_Of_Algeria.json",
-    danger_shapefile_path="../DATA/rpa99_zones_sismiques.shp",
-    danger_csv_path="../DATA/rpa99_zones_sismiques.csv",
+    communes_json_path=BASE_DIR /"../DATA/Commune_Of_Algeria.json",
+    danger_shapefile_path=BASE_DIR /"../DATA/rpa99_zones_sismiques.shp",
+    danger_csv_path=BASE_DIR /"../DATA/rpa99_zones_sismiques.csv",
 ):
     os.environ["SHAPE_RESTORE_SHX"] = "YES"
     local_csv_path = "latest_insurance_data.csv"
