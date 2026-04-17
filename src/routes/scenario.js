@@ -51,8 +51,6 @@ router.post('/simulate', async (req, res) => {
 
     let zones = [];
     let zoneSource = 'user_input';
-
-    // If wilaya and commune are provided, fetch zone from database
     if (selectedWilaya && selectedCommune && selectedWilaya !== 'TOUS' && selectedCommune !== 'TOUS') {
       const dbZone = await getDangerZoneFromDB(selectedWilaya, selectedCommune);
       
@@ -65,7 +63,7 @@ router.post('/simulate', async (req, res) => {
       zones = [dbZone];
       zoneSource = 'database';
     } else {
-      // If no location provided, return error (or you could use default zones)
+      
       return res.status(400).json({ 
         error: 'Veuillez fournir une wilaya et une commune pour déterminer la zone de danger' 
       });
@@ -79,7 +77,7 @@ router.post('/simulate', async (req, res) => {
     const portfolio = loadPortfolio();
     let contracts = portfolio.contracts.filter(c => c.year === year);
     
-    // Filtres additionnels
+  
     if (selectedWilaya && selectedWilaya !== 'TOUS') {
       contracts = contracts.filter(c => c.wilaya === selectedWilaya);
     }
