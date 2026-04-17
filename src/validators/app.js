@@ -4,6 +4,7 @@ import authRoutes from '../routes/authRoutes.js';
 import dangerZonesRouter from "../controllers/geomapcontroller.js"
 import senario from '../routes/scenario.js'
 import portfeil from '../routes/portfolio.js'
+
 const app = express();
 app.use(cors());
 app.use(express.json());

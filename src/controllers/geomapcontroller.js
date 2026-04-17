@@ -1,5 +1,8 @@
 import express from "express";
 import pool from "../config/db.js";
+import path  from 'path';
+import  fs from 'fs';
+import { fileURLToPath } from 'url';
 
 const router = express.Router();
 
@@ -68,5 +71,22 @@ router.put("/danger-zones/level", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const CSV_PATH = path.join(__dirname, './assurance.csv');
+
+router.get('/csv', (req, res) => {
+  if (!fs.existsSync(CSV_PATH)) {
+    return res.status(404).json({ error: 'CSV file not found. Place assurance.csv in /data folder.' });
+  }
+  res.download(CSV_PATH, 'assurance.csv');
+});
+
+
 
 export default router;
