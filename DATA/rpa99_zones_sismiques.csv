@@ -1,0 +1,164 @@
+N°,Wilaya,Commune,Danger_level
+01,Adrar,Toutes les communes,Zone 0
+02,Chlef,Toutes les communes sauf groupes B et C,Zone III
+02,Chlef,El Karimia,Zone IIb
+02,Chlef,Harchoun,Zone IIb
+02,Chlef,Sendjas,Zone IIb
+02,Chlef,Oued Sly,Zone IIb
+02,Chlef,Boukadir,Zone IIb
+02,Chlef,Ouled Ben Abd El Kader Hadjadj,Zone IIa
+03,Laghouat,Toutes les communes,Zone I
+04,Oum El Bouaghi,Toutes les communes,Zone I
+05,Batna,Toutes les communes,Zone I
+06,Bejaia,Toutes les communes,Zone IIa
+07,Biskra,Toutes les communes,Zone I
+08,Bechar,Toutes les communes,Zone 0
+09,Blida,Toutes les communes sauf groupe B,Zone III
+09,Blida,Meftah,Zone IIb
+09,Blida,Djebabra,Zone IIb
+09,Blida,Souhane,Zone IIb
+09,Blida,Larbaa,Zone IIb
+09,Blida,Ouled Selama,Zone IIb
+09,Blida,Bougara,Zone IIb
+09,Blida,Hammam Melouane,Zone IIb
+09,Blida,Ain Romana,Zone IIb
+10,Bouira,Toutes les communes,Zone IIa
+11,Tamanrasset,Toutes les communes,Zone 0
+12,Tebessa,Toutes les communes,Zone I
+13,Tlemcen,Toutes les communes,Zone I
+14,Tiaret,Toutes les communes,Zone I
+15,Tizi-Ouzou,Mizrana,Zone IIb
+15,Tizi-Ouzou,Toutes les communes sauf Mizrana,Zone IIa
+16,Alger,Toutes les communes,Zone III
+17,Djelfa,Toutes les communes,Zone I
+18,Jijel,Toutes les communes,Zone IIa
+19,Setif,Toutes les communes,Zone IIa
+20,Saida,Toutes les communes,Zone I
+21,Skikda,Toutes les communes,Zone IIa
+22,Sidi Bel-Abbes,Toutes les communes,Zone I
+23,Annaba,Toutes les communes,Zone IIa
+24,Guelma,Toutes les communes,Zone IIa
+25,Constantine,Toutes les communes,Zone IIa
+26,Medea,El Hamdania,Zone IIb
+26,Medea,Medea,Zone IIb
+26,Medea,Tamesguida,Zone IIb
+26,Medea,Toutes les communes sauf groupes A et C,Zone IIa
+26,Medea,Bou Aiche,Zone I
+26,Medea,Chahbounia,Zone I
+26,Medea,Boughzoul,Zone I
+26,Medea,Sareg,Zone I
+26,Medea,Meftaha,Zone I
+26,Medea,Ouled Maref,Zone I
+26,Medea,El Aounet,Zone I
+26,Medea,Ain Boucif,Zone I
+26,Medea,Sidi Damed,Zone I
+26,Medea,Ain Ouksir,Zone I
+26,Medea,Cheniguel,Zone I
+27,Mostaganem,Ouled Boughalem,Zone III
+27,Mostaganem,Achaacha,Zone III
+27,Mostaganem,Khadra,Zone III
+27,Mostaganem,Nekmaria,Zone III
+27,Mostaganem,Sidi Lakhdar,Zone IIb
+27,Mostaganem,Tasghait,Zone IIb
+27,Mostaganem,Ouled Maalah,Zone IIb
+27,Mostaganem,Toutes les communes sauf groupes A et B,Zone IIa
+28,M'Sila,Beni Ilmane,Zone IIa
+28,M'Sila,Ounougha,Zone IIa
+28,M'Sila,Hammam Dalaa,Zone IIa
+28,M'Sila,Tarmount,Zone IIa
+28,M'Sila,Ouled Mansour,Zone IIa
+28,M'Sila,M'Sila,Zone IIa
+28,M'Sila,M'Tarfa,Zone IIa
+28,M'Sila,Maadid,Zone IIa
+28,M'Sila,Ouled Derradj,Zone IIa
+28,M'Sila,Ouled Addi,Zone IIa
+28,M'Sila,Dahahna,Zone IIa
+28,M'Sila,Berhoum,Zone IIa
+28,M'Sila,Ain Kadra,Zone IIa
+28,M'Sila,Magra,Zone IIa
+28,M'Sila,Belaiba,Zone IIa
+28,M'Sila,Toutes les communes sauf groupe A,Zone I
+29,Mascara,Toutes les communes sauf groupe B,Zone IIa
+29,Mascara,Ain Fares,Zone I
+29,Mascara,Ain Fekran,Zone I
+29,Mascara,Bouhanifia,Zone I
+29,Mascara,Guerdjou,Zone I
+29,Mascara,Oued Taria,Zone I
+29,Mascara,Ghris,Zone I
+29,Mascara,Benain,Zone I
+29,Mascara,Mokhda,Zone I
+29,Mascara,Aouf,Zone I
+29,Mascara,Gharous,Zone I
+29,Mascara,Nesmot,Zone I
+29,Mascara,M'Hamid,Zone I
+29,Mascara,Hachem,Zone I
+29,Mascara,Oued El Abtal,Zone I
+29,Mascara,Ain Ferrah,Zone I
+30,Ouargla,Toutes les communes,Zone 0
+31,Oran,Toutes les communes,Zone IIa
+32,El Bayadh,Toutes les communes,Zone I
+33,Illizi,Toutes les communes,Zone 0
+34,Bordj Bou Arreridj,Toutes les communes,Zone IIa
+35,Boumerdes,Toutes les communes sauf groupes B et C,Zone III
+35,Boumerdes,Afir,Zone IIb
+35,Boumerdes,Benchoud,Zone IIb
+35,Boumerdes,Taouerga,Zone IIb
+35,Boumerdes,Baghlia,Zone IIb
+35,Boumerdes,Oued Aissa,Zone IIb
+35,Boumerdes,Naciria,Zone IIb
+35,Boumerdes,Bordj Menail,Zone IIb
+35,Boumerdes,Isser,Zone IIb
+35,Boumerdes,Beni Amrane,Zone IIb
+35,Boumerdes,Souk El Had,Zone IIb
+35,Boumerdes,Bouzegza Kedar,Zone IIb
+35,Boumerdes,El Kharouba,Zone IIb
+35,Boumerdes,Larbatache,Zone IIb
+35,Boumerdes,Khemis El Khechna,Zone IIb
+35,Boumerdes,Ouled Moussa,Zone IIb
+35,Boumerdes,Hammadi,Zone IIb
+35,Boumerdes,Timezrit,Zone IIa
+35,Boumerdes,Ammal,Zone IIa
+35,Boumerdes,Chaabet El Ameur,Zone IIa
+36,El Tarf,Toutes les communes,Zone IIa
+37,Tindouf,Toutes les communes,Zone 0
+38,Tissemsilt,Toutes les communes,Zone IIa
+39,El Oued,Toutes les communes,Zone 0
+40,Khenchela,Toutes les communes,Zone I
+41,Souk Ahras,Toutes les communes,Zone I
+42,Tipaza,Toutes les communes,Zone III
+43,Mila,Toutes les communes,Zone IIa
+44,Ain Defla,Tacheta,Zone III
+44,Ain Defla,Zougagha,Zone III
+44,Ain Defla,El Abadia,Zone III
+44,Ain Defla,Ain Bouyahia,Zone III
+44,Ain Defla,El Attaf,Zone III
+44,Ain Defla,El Amra,Zone IIb
+44,Ain Defla,Mekhtaria,Zone IIb
+44,Ain Defla,Arib,Zone IIb
+44,Ain Defla,Rouina,Zone IIb
+44,Ain Defla,Ain Defla,Zone IIb
+44,Ain Defla,Bourashed,Zone IIb
+44,Ain Defla,Zeddine,Zone IIb
+44,Ain Defla,Tiberkanine,Zone IIb
+44,Ain Defla,Sen Allah,Zone IIb
+44,Ain Defla,Meliana,Zone IIb
+44,Ain Defla,Ain Torki,Zone IIb
+44,Ain Defla,Hammam Righa,Zone IIb
+44,Ain Defla,Ain Benian,Zone IIb
+44,Ain Defla,Houceinia,Zone IIb
+44,Ain Defla,Boumadfaa,Zone IIb
+44,Ain Defla,Toutes les communes sauf groupes A et B,Zone IIa
+45,Naama,Toutes les communes,Zone I
+46,Ain Temouchent,Toutes les communes,Zone IIa
+47,Ghardaia,Toutes les communes,Zone 0
+48,Relizane,Mediouna,Zone III
+48,Relizane,Sidi M'Hamed Ben Ali,Zone III
+48,Relizane,Mazouna,Zone III
+48,Relizane,El Guettar,Zone III
+48,Relizane,Merdja Sidi Abed,Zone IIb
+48,Relizane,Oued Rhiou,Zone IIb
+48,Relizane,Ouartzenz,Zone IIb
+48,Relizane,Djidiouia,Zone IIb
+48,Relizane,Hamri,Zone IIb
+48,Relizane,Beni Zentis,Zone IIb
+48,Relizane,Toutes les communes sauf groupes A et B,Zone IIa
