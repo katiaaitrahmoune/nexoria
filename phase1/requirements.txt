@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-pandas
-geopandas
-shapely
-requests
-fiona
-pyproj
-rtree
