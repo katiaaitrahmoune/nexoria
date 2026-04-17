@@ -23,6 +23,22 @@ router.get("/danger-zones", async (req, res) => {
   }
 });
 
+router.get("/danger-building", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM map "
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "No GeoJSON found" });
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 // UPDATE - Update just the danger level for a specific wilaya
 router.put("/danger-zones/level", async (req, res) => {
   try {
