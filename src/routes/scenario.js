@@ -1,4 +1,5 @@
 import express from 'express';
+import pkg from 'pg';
 import { loadPortfolio } from '../controllers/portfolio_loader.js';
 import {
   ZONE_ACCELERATION,
@@ -6,29 +7,68 @@ import {
   TYPE_VULNERABILITY,
   ZONE_ORDER,
 } from '../controllers/rpa_config.js';
+import pool from '../config/db.js';
 
 const router = express.Router();
+
+// Helper function to get danger zone from database
+async function getDangerZoneFromDB(wilaya, commune) {
+  try {
+    const query = `
+      SELECT level 
+      FROM your_table_name 
+      WHERE wilaya = $1 AND commune = $2 
+      LIMIT 1
+    `;
+    const result = await pool.query(query, [wilaya, commune]);
+    
+    if (result.rows.length > 0) {
+      return result.rows[0].level;
+    }
+    return null;
+  } catch (error) {
+    console.error('Database error:', error);
+    throw error;
+  }
+}
 
 function formatDZD(n) {
   return Math.round(n).toLocaleString('fr-DZ');
 }
 
 // POST /api/scenario/simulate
-router.post('/simulate', (req, res) => {
+
+router.post('/simulate', async (req, res) => {
   try {
     const {
-      targetZones = ['III'],
       magnitude = 7.0,
       retentionCapacity = 5_000_000_000,
       year = 2025,
       selectedWilaya = null,
+      selectedCommune = null,  // New: commune from request body
       selectedType = null,
     } = req.body;
 
-    const validZones = ['0', 'I', 'IIa', 'IIb', 'III'];
-    const zones = targetZones.filter(z => validZones.includes(z));
-    if (zones.length === 0) {
-      return res.status(400).json({ error: 'Aucune zone valide fournie' });
+    let zones = [];
+    let zoneSource = 'user_input';
+
+    // If wilaya and commune are provided, fetch zone from database
+    if (selectedWilaya && selectedCommune && selectedWilaya !== 'TOUS' && selectedCommune !== 'TOUS') {
+      const dbZone = await getDangerZoneFromDB(selectedWilaya, selectedCommune);
+      
+      if (!dbZone) {
+        return res.status(404).json({ 
+          error: `Aucune zone de danger trouvée pour ${selectedWilaya} - ${selectedCommune}` 
+        });
+      }
+      
+      zones = [dbZone];
+      zoneSource = 'database';
+    } else {
+      // If no location provided, return error (or you could use default zones)
+      return res.status(400).json({ 
+        error: 'Veuillez fournir une wilaya et une commune pour déterminer la zone de danger' 
+      });
     }
     
     const mag = Math.min(Math.max(parseFloat(magnitude), 5.0), 8.5);
@@ -125,11 +165,19 @@ router.post('/simulate', (req, res) => {
     res.json({
       meta: {
         year,
-        targetZones: zones,
+        location: {
+          wilaya: selectedWilaya,
+          commune: selectedCommune,
+          dangerZone: zones[0]  // The zone fetched from database
+        },
         magnitude: mag,
         magnitudeAmplifier: parseFloat(clampedAmplifier.toFixed(3)),
         retentionCapacity,
-        filters: { wilaya: selectedWilaya || 'TOUS', type: selectedType || 'TOUS' },
+        filters: { 
+          wilaya: selectedWilaya || 'TOUS', 
+          commune: selectedCommune || 'TOUS',
+          type: selectedType || 'TOUS' 
+        },
         generatedAt: new Date().toISOString(),
       },
       exposure: {
