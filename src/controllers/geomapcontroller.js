@@ -87,6 +87,4 @@ router.get('/csv', (req, res) => {
   res.download(CSV_PATH, 'assurance.csv');
 });
 
-
-
 export default router;
