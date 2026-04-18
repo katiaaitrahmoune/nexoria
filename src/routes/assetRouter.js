@@ -120,90 +120,104 @@ async function postToML(body) {
       body: JSON.stringify(body),
     });
     const data = await response.json();
-    return { success: response.ok, status: response.status, data };
+    if (!response.ok) {
+      console.warn('⚠️ ML endpoint warning:', data);
+      return { success: false, status: response.status, data };
+    }
+    return { success: true, status: response.status, data };
   } catch (err) {
     console.error('ML endpoint error:', err.message);
     return { success: false, error: err.message };
   }
 }
 
+// ── Helper: shared calculation logic ──────────────────────
+function buildFullBody(req_body) {
+  const {
+    NUMERO_POLICE, DATE_EFFET, DATE_EXPIRATION,
+    WILAYA, COMMUNE, type_batiment = 'Industriel',
+    building_class = '3A', sum_insured, prime_nette,
+    nb_niveaux = 1, hauteur = 3, longueur, largeur,
+    surface_plancher, aire_murs,
+    epaisseur_mur = 20, distance_entre_murs = 6,
+    resistance_mortier = 5, resistance_beton = 15,
+    age_construction,
+  } = req_body;
+
+  const wilayaClean        = WILAYA.trim().toUpperCase();
+  const communeClean       = COMMUNE.trim().toUpperCase();
+  const zone_sismique      = RPA_ZONES[wilayaClean] || 'I';
+  const zone_ord           = { '0': 0, 'I': 1, 'IIa': 2, 'IIb': 3, 'III': 4 }[zone_sismique];
+  const annee              = new Date(DATE_EFFET).getFullYear();
+  const age_batiment       = age_construction ? annee - age_construction : 0;
+  const annee_construction = age_construction || '';
+  const duree_police_jours = Math.round((new Date(DATE_EXPIRATION) - new Date(DATE_EFFET)) / 86400000);
+  const densite_murs       = aire_murs && surface_plancher ? parseFloat((aire_murs / surface_plancher).toFixed(4)) : 0.04;
+  const ratio_longlarg     = parseFloat((longueur / largeur).toFixed(3));
+  const ratio_hauteur_larg = parseFloat((hauteur / largeur).toFixed(3));
+  const taux_prime_brut    = parseFloat((prime_nette / sum_insured).toFixed(6));
+  const wilaya_id          = parseInt(NUMERO_POLICE.toString().substring(0, 2)) || 0;
+  const tax_rate           = { '0': 0, 'I': 0.10, 'IIa': 0.14, 'IIb': 0.22, 'III': 0.38 }[zone_sismique];
+
+  const { damage_ratio, rpa_nb_violations, rpa_conforme, violations } = computeDamageRatio({
+    zone_sismique, nb_niveaux, hauteur, longueur, largeur,
+    epaisseur_mur, densite_murs, distance_entre_murs,
+    resistance_mortier, resistance_beton,
+    age_batiment, type_batiment,
+  });
+
+  const expected_payout = Math.round(sum_insured * damage_ratio);
+
+  const fullBody = {
+    ...req_body,
+    NUMERO_POLICE, wilaya_id, WILAYA: wilayaClean, COMMUNE: communeClean,
+    zone_sismique, zone_ord, type_batiment, building_class,
+    sum_insured, prime_nette, taux_prime_brut,
+    DATE_EFFET, DATE_EXPIRATION, duree_police_jours,
+    nb_niveaux, hauteur, longueur, largeur,
+    surface_plancher: surface_plancher || (longueur * largeur),
+    aire_murs: aire_murs || '',
+    densite_murs, epaisseur_mur, distance_entre_murs,
+    ratio_longlarg, ratio_hauteur_larg,
+    resistance_mortier, resistance_beton,
+    age_construction: age_construction || '',
+    age_batiment,
+    rpa_conforme, rpa_nb_violations,
+    viol_hauteur:      violations.includes('viol_hauteur') ? 1 : 0,
+    viol_etages:       violations.includes('viol_etages') ? 1 : 0,
+    viol_ratio_plan:   violations.includes('viol_ratio_plan') ? 1 : 0,
+    viol_densite_murs: violations.includes('viol_densite_murs') ? 1 : 0,
+    viol_epaisseur:    violations.includes('viol_epaisseur') ? 1 : 0,
+    viol_mortier:      violations.includes('viol_mortier') ? 1 : 0,
+    viol_beton:        violations.includes('viol_beton') ? 1 : 0,
+    viol_dist_murs:    violations.includes('viol_dist_murs') ? 1 : 0,
+    tax_rate, damage_ratio, expected_payout,
+    annee_construction,
+  };
+
+  return { fullBody, violations, rpa_conforme, rpa_nb_violations, damage_ratio, expected_payout, zone_sismique };
+}
+
 // ============================================================
 // POST /api/assets/add
-// Ajouter une assurance + calculer + poster au ML
 // ============================================================
-router.post('/add', async (req, res) => {
+router.post('/predicted', async (req, res) => {
   try {
-    const {
-      NUMERO_POLICE, DATE_EFFET, DATE_EXPIRATION,
-      WILAYA, COMMUNE, type_batiment = 'Industriel',
-      building_class = '3A', sum_insured, prime_nette,
-      nb_niveaux = 1, hauteur = 3, longueur, largeur,
-      surface_plancher, aire_murs,
-      epaisseur_mur = 20, distance_entre_murs = 6,
-      resistance_mortier = 5, resistance_beton = 15,
-      age_construction,
-    } = req.body;
+    const { NUMERO_POLICE, DATE_EFFET, DATE_EXPIRATION, WILAYA, COMMUNE, sum_insured, longueur, largeur } = req.body;
 
-    // ── Validation ──────────────────────────────────────────
     if (!NUMERO_POLICE || !DATE_EFFET || !DATE_EXPIRATION ||
         !WILAYA || !COMMUNE || !sum_insured || !longueur || !largeur) {
       return res.status(400).json({ error: 'Champs obligatoires manquants' });
     }
 
-    // ── Auto-calculs ────────────────────────────────────────
-    const wilayaClean       = WILAYA.trim().toUpperCase();
-    const communeClean      = COMMUNE.trim().toUpperCase();
-    const zone_sismique     = RPA_ZONES[wilayaClean] || 'I';
-    const zone_ord          = { '0': 0, 'I': 1, 'IIa': 2, 'IIb': 3, 'III': 4 }[zone_sismique];
-    const annee             = new Date(DATE_EFFET).getFullYear();
-    const age_batiment      = age_construction ? annee - age_construction : 0;
-    const annee_construction = age_construction || '';
-    const duree_police_jours = Math.round((new Date(DATE_EXPIRATION) - new Date(DATE_EFFET)) / 86400000);
-    const densite_murs      = aire_murs && surface_plancher ? parseFloat((aire_murs / surface_plancher).toFixed(4)) : 0.04;
-    const ratio_longlarg    = parseFloat((longueur / largeur).toFixed(3));
-    const ratio_hauteur_larg = parseFloat((hauteur / largeur).toFixed(3));
-    const taux_prime_brut   = parseFloat((prime_nette / sum_insured).toFixed(6));
-    const wilaya_id         = parseInt(NUMERO_POLICE.toString().substring(0, 2)) || 0;
-    const tax_rate          = { '0': 0, 'I': 0.10, 'IIa': 0.14, 'IIb': 0.22, 'III': 0.38 }[zone_sismique];
+    const { fullBody, violations, rpa_conforme, rpa_nb_violations, damage_ratio, expected_payout, zone_sismique } = buildFullBody(req.body);
 
-    // ── Damage ratio via RPA ch.9 ───────────────────────────
-    const { damage_ratio, rpa_nb_violations, rpa_conforme, violations } = computeDamageRatio({
-      zone_sismique, nb_niveaux, hauteur, longueur, largeur,
-      epaisseur_mur, densite_murs, distance_entre_murs,
-      resistance_mortier, resistance_beton,
-      age_batiment, type_batiment,
-    });
+    // ── Écrire dans le CSV ────────────────────────────────
+    const rowData = CSV_HEADERS.map(h => fullBody[h] ?? '');
+    const { isNewFile, newRow } = appendToCSV(rowData);
+    console.log(isNewFile ? '📁 Nouveau fichier CSV créé' : '📝 Ligne ajoutée au CSV');
 
-    const expected_payout = Math.round(sum_insured * damage_ratio);
-
-    // ── Construire le body complet ──────────────────────────
-    const fullBody = {
-      NUMERO_POLICE, wilaya_id, WILAYA: wilayaClean, COMMUNE: communeClean,
-      zone_sismique, zone_ord, type_batiment, building_class,
-      sum_insured, prime_nette, taux_prime_brut,
-      DATE_EFFET, DATE_EXPIRATION, duree_police_jours,
-      nb_niveaux, hauteur, longueur, largeur,
-      surface_plancher: surface_plancher || (longueur * largeur),
-      aire_murs: aire_murs || '',
-      densite_murs, epaisseur_mur, distance_entre_murs,
-      ratio_longlarg, ratio_hauteur_larg,
-      resistance_mortier, resistance_beton,
-      age_construction: age_construction || '',
-      age_batiment,
-      rpa_conforme, rpa_nb_violations,
-      viol_hauteur:       violations.includes('viol_hauteur') ? 1 : 0,
-      viol_etages:        violations.includes('viol_etages') ? 1 : 0,
-      viol_ratio_plan:    violations.includes('viol_ratio_plan') ? 1 : 0,
-      viol_densite_murs:  violations.includes('viol_densite_murs') ? 1 : 0,
-      viol_epaisseur:     violations.includes('viol_epaisseur') ? 1 : 0,
-      viol_mortier:       violations.includes('viol_mortier') ? 1 : 0,
-      viol_beton:         violations.includes('viol_beton') ? 1 : 0,
-      viol_dist_murs:     violations.includes('viol_dist_murs') ? 1 : 0,
-      tax_rate, damage_ratio, expected_payout,
-      annee_construction,
-    };
-
-    // ── POST vers ML endpoint ───────────────────────────────
+    // ── POST vers ML endpoint ─────────────────────────────
     const mlResult = await postToML(fullBody);
     console.log('🤖 ML response:', mlResult);
 
@@ -226,93 +240,43 @@ router.post('/add', async (req, res) => {
 
 // ============================================================
 // POST /api/assets/add-predicted
-// Reçoit un body déjà complet (depuis ML ou frontend)
-// Re-calcule exactement comme /add et écrit dans le CSV
 // ============================================================
-router.post('/add-predicted', async (req, res) => {
+router.post('/add', async (req, res) => {
   try {
-    const {
-      NUMERO_POLICE, DATE_EFFET, DATE_EXPIRATION,
-      WILAYA, COMMUNE, type_batiment = 'Industriel',
-      building_class = '3A', sum_insured, prime_nette,
-      nb_niveaux = 1, hauteur = 3, longueur, largeur,
-      surface_plancher, aire_murs,
-      epaisseur_mur = 20, distance_entre_murs = 6,
-      resistance_mortier = 5, resistance_beton = 15,
-      age_construction,
-    } = req.body;
+    const { NUMERO_POLICE, DATE_EFFET, DATE_EXPIRATION, WILAYA, COMMUNE, sum_insured, longueur, largeur } = req.body;
 
-    // ── Validation ──────────────────────────────────────────
     if (!NUMERO_POLICE || !DATE_EFFET || !DATE_EXPIRATION ||
         !WILAYA || !COMMUNE || !sum_insured || !longueur || !largeur) {
       return res.status(400).json({ error: 'Champs obligatoires manquants' });
     }
 
-    // ── Auto-calculs (identiques à /add) ───────────────────
-    const wilayaClean        = WILAYA.trim().toUpperCase();
-    const communeClean       = COMMUNE.trim().toUpperCase();
-    const zone_sismique      = RPA_ZONES[wilayaClean] || 'I';
-    const zone_ord           = { '0': 0, 'I': 1, 'IIa': 2, 'IIb': 3, 'III': 4 }[zone_sismique];
-    const annee              = new Date(DATE_EFFET).getFullYear();
-    const age_batiment       = age_construction ? annee - age_construction : 0;
-    const annee_construction = age_construction || '';
-    const duree_police_jours = Math.round((new Date(DATE_EXPIRATION) - new Date(DATE_EFFET)) / 86400000);
-    const densite_murs       = aire_murs && surface_plancher ? parseFloat((aire_murs / surface_plancher).toFixed(4)) : 0.04;
-    const ratio_longlarg     = parseFloat((longueur / largeur).toFixed(3));
-    const ratio_hauteur_larg = parseFloat((hauteur / largeur).toFixed(3));
-    const taux_prime_brut    = parseFloat((prime_nette / sum_insured).toFixed(6));
-    const wilaya_id          = parseInt(NUMERO_POLICE.toString().substring(0, 2)) || 0;
-    const tax_rate           = { '0': 0, 'I': 0.10, 'IIa': 0.14, 'IIb': 0.22, 'III': 0.38 }[zone_sismique];
+    const { fullBody, violations, rpa_conforme, rpa_nb_violations, damage_ratio, expected_payout, zone_sismique } = buildFullBody(req.body);
 
-    const { damage_ratio, rpa_nb_violations, rpa_conforme, violations } = computeDamageRatio({
-      zone_sismique, nb_niveaux, hauteur, longueur, largeur,
-      epaisseur_mur, densite_murs, distance_entre_murs,
-      resistance_mortier, resistance_beton,
-      age_batiment, type_batiment,
-    });
-
-    const expected_payout = Math.round(sum_insured * damage_ratio);
-
-    // ── Body complet (inclut tout ce qui vient du req.body aussi) ──
-    const fullBody = {
-      ...req.body,                          // preserve any extra fields from caller
-      NUMERO_POLICE, wilaya_id, WILAYA: wilayaClean, COMMUNE: communeClean,
-      zone_sismique, zone_ord, type_batiment, building_class,
-      sum_insured, prime_nette, taux_prime_brut,
-      DATE_EFFET, DATE_EXPIRATION, duree_police_jours,
-      nb_niveaux, hauteur, longueur, largeur,
-      surface_plancher: surface_plancher || (longueur * largeur),
-      aire_murs: aire_murs || '',
-      densite_murs, epaisseur_mur, distance_entre_murs,
-      ratio_longlarg, ratio_hauteur_larg,
-      resistance_mortier, resistance_beton,
-      age_construction: age_construction || '',
-      age_batiment,
-      rpa_conforme, rpa_nb_violations,
-      viol_hauteur:      violations.includes('viol_hauteur') ? 1 : 0,
-      viol_etages:       violations.includes('viol_etages') ? 1 : 0,
-      viol_ratio_plan:   violations.includes('viol_ratio_plan') ? 1 : 0,
-      viol_densite_murs: violations.includes('viol_densite_murs') ? 1 : 0,
-      viol_epaisseur:    violations.includes('viol_epaisseur') ? 1 : 0,
-      viol_mortier:      violations.includes('viol_mortier') ? 1 : 0,
-      viol_beton:        violations.includes('viol_beton') ? 1 : 0,
-      viol_dist_murs:    violations.includes('viol_dist_murs') ? 1 : 0,
-      tax_rate, damage_ratio, expected_payout,
-      annee_construction,
-    };
-
-    // ── Écrire dans le CSV ──────────────────────────────────
+    // ── Écrire dans le CSV ────────────────────────────────
     const rowData = CSV_HEADERS.map(h => fullBody[h] ?? '');
     const { isNewFile, newRow } = appendToCSV(rowData);
     console.log(isNewFile ? '📁 Nouveau fichier CSV créé' : '📝 Ligne ajoutée au CSV');
 
-  
+    // ── POST vers ML endpoint ─────────────────────────────
+    const mlResult = await postToML(fullBody);
+    console.log('🤖 ML response:', mlResult);
+
+    res.status(201).json({
+      message: isNewFile ? 'Nouveau fichier créé avec succès' : 'Asset ajouté via prediction avec succès',
+      action: isNewFile ? 'created' : 'appended',
+      computed: {
+        zone_sismique, damage_ratio, expected_payout,
+        rpa_conforme: rpa_conforme === 1, rpa_nb_violations, violations,
+      },
+      ml_result: mlResult,
+      new_row: newRow,
+    });
+
   } catch (err) {
     console.error('Add predicted asset error:', err);
     res.status(500).json({ error: err.message });
   }
 });
-
 // ============================================================
 // GET /api/assets/read
 // ============================================================
