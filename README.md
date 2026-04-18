@@ -3,7 +3,9 @@
 A Node.js/Express backend for seismic risk assessment and insurance portfolio management in Algeria, built on the **RPA 99 / Version 2003** standard (Règles Parasismiques Algériennes).
 
 ---
-
+# Base_url backend = https://nexoria-vq48.onrender.com
+# Base_url Frontend = https://gam2026.netlify.app/LoginScreen
+## user to login = admin@nexoria.com / admin123
 ## Tech Stack
 
 - **Runtime**: Node.js (ES Modules)
@@ -32,6 +34,7 @@ A Node.js/Express backend for seismic risk assessment and insurance portfolio ma
 │   │   ├── rpa_config.js          # RPA 99 constants & lookup tables
 │   │   ├── portfolio_loader.js    # XLSX ingestion + in-memory cache
 │   │   └── geomapcontroller.js    # GeoJSON danger zone DB queries
+|   |   └── reiassurance.js        # give recomendation to the admin bazed on a provided capital informations
 │   ├── models/
 │   │   └── userModel.js           # findUserByEmail()
 │   ├── routes/
@@ -305,46 +308,9 @@ Queries the `your_table_name` table (to be renamed to your actual table).
 | GET | `/api/csv` | Download `assurance.csv` |
 
 ---
-
-## Database Tables Required
-
-```sql
--- Users
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  name VARCHAR(255),
-  role VARCHAR(50) DEFAULT 'user',
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Seismic danger zones (rename your_table_name)
-CREATE TABLE locations (
-  id SERIAL PRIMARY KEY,
-  wilaya VARCHAR(100),
-  commune VARCHAR(100),
-  level VARCHAR(10)   -- e.g. 'III', 'IIa'
-);
-
--- GeoJSON danger zones
-CREATE TABLE danger_zones (
-  id SERIAL PRIMARY KEY,
-  geojson JSONB,
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Map buildings
-CREATE TABLE map (
-  id SERIAL PRIMARY KEY
-  -- add your columns here
-);
-```
-
-> **Note**: Replace `your_table_name` in `scenario.js` and `lacation.js` with your actual table name (e.g. `locations`).
-
----
-
+### rieasureur POST api/calculate
+Computes reinsurance repartition based on a given insured capital and annual premium.
+Takes a tauxCession (%) to split capital and premium between the company and the reinsurer, applies a fixed 22% return commission on the ceded premium, and returns the final financial breakdown for both parties.
 ## RPA 99 Zone Reference
 
 | Zone | Acceleration A | Description |
@@ -358,11 +324,3 @@ CREATE TABLE map (
 Key wilayas at Zone III: **Alger, Blida, Boumerdès, Tipaza, Mostaganem, Aïn Defla, Relizane**.
 
 ---
-
-## Known Issues / TODOs
-
-- `your_table_name` placeholder in `scenario.js` and `lacation.js` must be replaced with the real table name.
-- `geomapcontroller.js` is mounted as a controller but acts as a router — consider moving it to `src/routes/`.
-- `app.js` lives in `src/validators/` but is not a validator — consider moving to `src/app.js`.
-- No refresh token endpoint implemented yet despite `JWT_REFRESH_SECRET` being defined.
-- File upload (`multer`) is installed but no route uses it yet.
