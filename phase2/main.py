@@ -9,9 +9,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Load model
-# ─────────────────────────────────────────────────────────────────────────────
+
 MODEL_PATH = Path(__file__).parent / "risk_assessment.pkl"
 with open(MODEL_PATH, "rb") as f:
     model = pickle.load(f)
@@ -36,9 +36,9 @@ TAX_MATRIX = {
     ("3B","0"):0.04, ("3B","I"):0.06, ("3B","IIa"):0.09, ("3B","IIb"):0.12, ("3B","III"):0.16,
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Schemas
-# ─────────────────────────────────────────────────────────────────────────────
+
 class PolicyInput(BaseModel):
     NUMERO_POLICE:       int
     wilaya_id:           Optional[int]   = None
@@ -86,7 +86,7 @@ class PolicyInput(BaseModel):
     viol_dist_murs:      Optional[int]   = None
 
     class Config:
-        extra = "ignore"   # drop any unknown fields silently
+        extra = "ignore"  
 
 
 class PolicyOutput(BaseModel):
@@ -110,9 +110,7 @@ class BatchOutput(BaseModel):
     total:   int
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# RPA checker
-# ─────────────────────────────────────────────────────────────────────────────
+
 def verifier_vulnerabilite_maconnerie(d: dict) -> dict:
     res = {"conforme": True, "alertes": []}
     limites = {
@@ -141,9 +139,7 @@ def verifier_vulnerabilite_maconnerie(d: dict) -> dict:
     return res
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Core prediction
-# ─────────────────────────────────────────────────────────────────────────────
+
 def predict_single(p: PolicyInput) -> PolicyOutput:
     d = p.model_dump()
 
@@ -189,9 +185,7 @@ def predict_single(p: PolicyInput) -> PolicyOutput:
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# App
-# ─────────────────────────────────────────────────────────────────────────────
+
 app = FastAPI(title="Seismic Risk API", version="1.0.0")
 
 app.add_middleware(
@@ -207,7 +201,7 @@ def health():
     return {"status": "ok", "model_loaded": True, "features": len(FEATURES)}
 
 
-# ── PRIMARY ROUTE — Node.js sends here ───────────────────────────────────────
+# PRIMARY ROUTE — Node.js 
 @app.post("/predict", response_model=PolicyOutput)
 def predict(policy: PolicyInput):
     """Single policy scoring. Node.js → POST /predict → get PolicyOutput back."""
@@ -217,7 +211,7 @@ def predict(policy: PolicyInput):
         raise HTTPException(status_code=422, detail=str(e))
 
 
-# ── BATCH ─────────────────────────────────────────────────────────────────────
+# BATCH 
 @app.post("/predict/batch", response_model=BatchOutput)
 def predict_batch(payload: BatchInput):
     results = []
@@ -232,7 +226,7 @@ def predict_batch(payload: BatchInput):
     return BatchOutput(results=results, total=len(results))
 
 
-# ── AUTOMATION — fetch CSV → score → push to Node.js /api/save-results ────────
+
 @app.post("/predict/from-url")
 async def predict_from_url():
     csv_url  = "https://nexoria-vq48.onrender.com/addassurance.csv"
