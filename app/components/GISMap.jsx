@@ -13,11 +13,11 @@ const ZONE_CONFIG = {
 };
 
 const LEGEND = [
-  { score: 4, label: "Zone III — Très haute sismicité" },
-  { score: 3, label: "Zone IIb — Haute sismicité" },
-  { score: 2, label: "Zone IIa — Sismicité moyenne" },
-  { score: 1, label: "Zone I — Faible sismicité" },
-  { score: 0, label: "Zone 0 — Très faible sismicité" },
+  { score: 4, label: "Zone III — Very high seismicity" },
+  { score: 3, label: "Zone IIb — High seismicity" },
+  { score: 2, label: "Zone IIa — Moderate seismicity" },
+  { score: 1, label: "Zone I — Low seismicity" },
+  { score: 0, label: "Zone 0 — Very low seismicity" },
 ];
 
 // Dynamically import map to avoid SSR issues
@@ -55,8 +55,8 @@ export default function GISMap() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">Carte des Zones Sismiques</h1>
-          <p className="text-xs text-white/40 mt-0.5">Algérie — Danger Zones GeoJSON</p>
+          <h1 className="text-xl font-bold tracking-tight text-white">Seismic Zones Map</h1>
+          <p className="text-xs text-white/40 mt-0.5">Algeria — Danger Zones GeoJSON</p>
         </div>
         {data && (
           <div className="flex gap-3">
@@ -83,13 +83,13 @@ export default function GISMap() {
             <div className="absolute inset-0 flex items-center justify-center bg-[#0f1a0f] z-10">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-[#2d7a2d] border-t-transparent rounded-full animate-spin" />
-                <p className="text-white/50 text-sm">Chargement des zones…</p>
+                <p className="text-white/50 text-sm">Loading zones…</p>
               </div>
             </div>
           )}
           {error && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#0f1a0f] z-10">
-              <p className="text-red-400 text-sm">Erreur: {error}</p>
+              <p className="text-red-400 text-sm">Error: {error}</p>
             </div>
           )}
           {!loading && !error && data && (
@@ -98,7 +98,7 @@ export default function GISMap() {
 
           {/* Legend */}
           <div className="absolute bottom-6 left-4 z-[1000] bg-[#0f1a0f]/90 backdrop-blur border border-white/10 rounded-xl px-4 py-3 space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/40 mb-2">Légende</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/40 mb-2">Legend</p>
             {LEGEND.map(({ score, label }) => (
               <div key={score} className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: ZONE_CONFIG[score].color }} />
@@ -111,7 +111,7 @@ export default function GISMap() {
         {/* Info Panel */}
         <div className="w-72 border-l border-white/10 flex flex-col bg-[#2e4e2e]">
           <div className="px-4 py-3 border-b border-white/10">
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Détails</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Details</p>
           </div>
           {selected ? (
             <div className="p-4 space-y-4">
@@ -134,14 +134,14 @@ export default function GISMap() {
 
               <div className="space-y-2">
                 <Row label="Wilaya" value={selected.Wilaya} />
-                <Row label="Niveau" value={selected.Level} />
+                <Row label="Level" value={selected.Level} />
                 <Row label="Score" value={`${selected.zone_score} / 4`} />
                 <Row label="Classification" value={LEGEND.find(l => l.score === selected.zone_score)?.label?.split("—")[1]?.trim()} />
               </div>
 
               {/* Risk bar */}
               <div>
-                <p className="text-xs text-white/40 mb-1.5">Niveau de risque</p>
+                <p className="text-xs text-white/40 mb-1.5">Risk level</p>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500"
@@ -152,8 +152,8 @@ export default function GISMap() {
                   />
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className="text-[10px] text-white/30">Faible</span>
-                  <span className="text-[10px] text-white/30">Élevé</span>
+                  <span className="text-[10px] text-white/30">Low</span>
+                  <span className="text-[10px] text-white/30">High</span>
                 </div>
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function GISMap() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
                   </svg>
                 </div>
-                <p className="text-xs text-white/30">Cliquez sur un point<br/>pour voir les détails</p>
+                <p className="text-xs text-white/30">Click on a point<br/>to view details</p>
               </div>
             </div>
           )}

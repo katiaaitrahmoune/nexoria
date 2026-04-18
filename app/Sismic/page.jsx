@@ -42,7 +42,7 @@ function pct(n) {
 }
 
 // ── 3D Seismic Simulation ────────────────────────────────────────────────────
-function SeismicCanvas({ magnitude, zone, isRunning, retentionCapacity }) {
+function SeismicCanvas({ magnitude, zone, isRunning}) {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const frameRef = useRef(null);
@@ -514,11 +514,11 @@ export default function Simulation() {
 
   return (
     <AdminLayout>
-      <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: "#f7faf7", minHeight: "100vh", padding: "28px 32px", color: "#1a3a1a" }}>
+      <div style={{  background: "#f7faf7", minHeight: "100vh", padding: "28px 32px", color: "#1a3a1a" }}>
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#1a5c1a", margin: 0 }}>Seismic Loss Simulation</h1>
-          <p style={{ fontSize: 14, color: "#6b7280", margin: "4px 0 0" }}>
+          <h1 style={{ fontSize: 38, fontWeight: 800, color: "#1a5c1a", margin: 0 }}>Seismic Loss Simulation</h1>
+          <p style={{ fontSize: 24, color: "#6b7280", margin: "4px 0 0" }}>
             Loss modeling for seismic scenarios — GAM Assurance Portfolio
           </p>
         </div>
@@ -565,19 +565,7 @@ export default function Simulation() {
                 {loadingCommunes && <span style={{ fontSize: 10, color: "#9ca3af" }}>Loading communes...</span>}
               </div>
 
-              {/* Asset Type Dropdown */}
-              <div style={{ flex: 1, minWidth: 120 }}>
-                <select
-                  value={type}
-                  onChange={e => setType(e.target.value)}
-                  style={selectStyle}
-                >
-                  <option value="all">All Types</option>
-                  <option value="industrial">Industrial</option>
-                  <option value="commercial">Commercial</option>
-                  <option value="residential">Residential</option>
-                </select>
-              </div>
+              
             </div>
 
             {/* Magnitude slider */}

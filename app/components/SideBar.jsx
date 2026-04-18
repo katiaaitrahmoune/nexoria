@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -68,8 +68,8 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: "Risk Analysis",
-    href: "/Zone",
+    label: "Insurance Reinsurance",
+    href: "/insurance",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <line x1="4" y1="20" x2="4" y2="14" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
@@ -79,18 +79,7 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-  {
-    label: "Reports",
-    href: "/Reports",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <rect x="4" y="2" width="16" height="20" rx="2" stroke="currentColor" strokeWidth={1.8} fill="none" />
-        <line x1="8" y1="7" x2="16" y2="7" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
-        <line x1="8" y1="11" x2="16" y2="11" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
-        <line x1="8" y1="15" x2="12" y2="15" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
-      </svg>
-    ),
-  },
+  
 ];
 
 export default function Sidebar() {
