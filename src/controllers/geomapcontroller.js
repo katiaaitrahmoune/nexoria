@@ -3,7 +3,7 @@ import pool from "../config/db.js";
 import path  from 'path';
 import  fs from 'fs';
 import { fileURLToPath } from 'url';
-import calcuate from './dashboardController.js'
+import calculate from './dashboardController.js'
 const router = express.Router();
 
 router.get("/danger-zones", async (req, res) => {
