@@ -927,7 +927,7 @@ export default function Simulation() {
             </div>
 
             {/* Data Quality + Recommendations */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div style={{ }}>
               <div style={{ background: "#fff", border: "1px solid #e8f0e8", borderRadius: 12, padding: 20 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14, color: "#1a3a1a" }}>📈 Data Quality</div>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -945,22 +945,7 @@ export default function Simulation() {
                 </div>
               </div>
 
-              <div style={{ background: "#fff", border: "1px solid #e8f0e8", borderRadius: 12, padding: 20 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14, color: "#1a3a1a" }}>💡 Recommendations</div>
-                {(results.recommendations || []).map((r, i) => (
-                  <div key={i} style={{
-                    display: "flex", gap: 10, padding: "8px 0", borderBottom: "1px solid #f0f4f0",
-                  }}>
-                    <div style={{
-                      flexShrink: 0, padding: "2px 7px", borderRadius: 4, fontSize: 10, fontWeight: 700,
-                      background: r.priority === "HIGH" ? "#fef2f2" : r.priority === "MEDIUM" ? "#fff7ed" : "#f0fdf4",
-                      color: r.priority === "HIGH" ? "#991b1b" : r.priority === "MEDIUM" ? "#9a3412" : "#166534",
-                      alignSelf: "flex-start", marginTop: 1,
-                    }}>{r.priority}</div>
-                    <div style={{ fontSize: 12, color: "#374151", lineHeight: 1.5 }}>{r.action}</div>
-                  </div>
-                ))}
-              </div>
+             
             </div>
           </>
         )}
