@@ -139,13 +139,12 @@ function buildFullBody(req_body) {
     resistance_mortier = 5, resistance_beton = 15,
     age_construction,
   } = req_body;
-  
- // if (type_batiment=='Industriel'){const building_class='3A'}elseif(type_batiment=='comairciale'){}
+  let building_class
+ if (type_batiment=='Industriel'){building_class='3A'}else if(type_batiment='comairciale')
+  { building_class='3A'}else {building_class='1A'}
 
 
-  
-/*
-const building_class = 
+
   const wilayaClean        = WILAYA.trim().toUpperCase();
   const communeClean       = COMMUNE.trim().toUpperCase();
   const zone_sismique      = RPA_ZONES[wilayaClean] || 'I';
@@ -160,7 +159,7 @@ const building_class =
   const taux_prime_brut    = parseFloat((prime_nette / sum_insured).toFixed(6));
   const wilaya_id          = parseInt(NUMERO_POLICE.toString().substring(0, 2)) || 0;
   const tax_rate           = { '0': 0, 'I': 0.10, 'IIa': 0.14, 'IIb': 0.22, 'III': 0.38 }[zone_sismique];
-*/
+
   const { damage_ratio, rpa_nb_violations, rpa_conforme, violations } = computeDamageRatio({
     zone_sismique, nb_niveaux, hauteur, longueur, largeur,
     epaisseur_mur, densite_murs, distance_entre_murs,
