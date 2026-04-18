@@ -6,4 +6,3 @@ A Node.js/Express backend for seismic risk assessment and insurance portfolio ma
 # Base_url backend = https://nexoria-vq48.onrender.com
 # Base_url Frontend = https://gam2026.netlify.app/LoginScreen
 ## user to login = admin@nexoria.com / admin123
-## Tech Stack
