@@ -18,6 +18,7 @@ app.use('/api/auth', authRoutes);
 app.use("/api", dangerZonesRouter);
 app.use('/api/assets', assetRouter);
 app.use('/api/locations', locationRoutes);
+
 app.get('/', (req, res) => res.json({ message: 'Nexoria server is running' }));
 
 export default app;

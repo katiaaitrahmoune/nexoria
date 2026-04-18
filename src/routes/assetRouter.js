@@ -14,7 +14,7 @@ const CSV_PATH = path.join(PROJECT_ROOT, 'public', 'addassurance.csv');
 
 const ML_ENDPOINT = 'https://ai-assesments.onrender.com/predict';
 
-// ── CSV Headers (aligned with DataFrame) ──────────────────
+
 const CSV_HEADERS = [
   'NUMERO_POLICE', 'wilaya_id', 'WILAYA', 'COMMUNE',
   'zone_sismique', 'zone_ord', 'type_batiment', 'building_class',
@@ -31,7 +31,6 @@ const CSV_HEADERS = [
   'tax_rate', 'damage_ratio', 'expected_payout', 'annee_construction',
 ];
 
-// ── Calcul damage_ratio selon RPA chap.9 ──────────────────
 function computeDamageRatio({
   zone_sismique, nb_niveaux, hauteur, longueur, largeur,
   epaisseur_mur, densite_murs, distance_entre_murs,
@@ -95,7 +94,6 @@ function computeDamageRatio({
   };
 }
 
-// ── Helper: write one row to CSV ───────────────────────────
 function appendToCSV(rowData) {
   const newRow = rowData.join(',');
   const dir = path.dirname(CSV_PATH);
@@ -111,7 +109,6 @@ function appendToCSV(rowData) {
   }
 }
 
-// ── Helper: POST body to ML endpoint ──────────────────────
 async function postToML(body) {
   try {
     const response = await fetch(ML_ENDPOINT, {
@@ -121,7 +118,7 @@ async function postToML(body) {
     });
     const data = await response.json();
     if (!response.ok) {
-      console.warn('⚠️ ML endpoint warning:', data);
+      console.warn('ML endpoint warning:', data);
       return { success: false, status: response.status, data };
     }
     return { success: true, status: response.status, data };
@@ -131,7 +128,6 @@ async function postToML(body) {
   }
 }
 
-// ── Helper: shared calculation logic ──────────────────────
 function buildFullBody(req_body) {
   const {
     NUMERO_POLICE, DATE_EFFET, DATE_EXPIRATION,
@@ -197,10 +193,6 @@ function buildFullBody(req_body) {
 
   return { fullBody, violations, rpa_conforme, rpa_nb_violations, damage_ratio, expected_payout, zone_sismique };
 }
-
-// ============================================================
-// POST /api/assets/add
-// ============================================================
 router.post('/predicted', async (req, res) => {
   try {
     const { NUMERO_POLICE, DATE_EFFET, DATE_EXPIRATION, WILAYA, COMMUNE, sum_insured, longueur, largeur } = req.body;
@@ -212,14 +204,12 @@ router.post('/predicted', async (req, res) => {
 
     const { fullBody, violations, rpa_conforme, rpa_nb_violations, damage_ratio, expected_payout, zone_sismique } = buildFullBody(req.body);
 
-    // ── Écrire dans le CSV ────────────────────────────────
     const rowData = CSV_HEADERS.map(h => fullBody[h] ?? '');
     const { isNewFile, newRow } = appendToCSV(rowData);
-    console.log(isNewFile ? '📁 Nouveau fichier CSV créé' : '📝 Ligne ajoutée au CSV');
+    console.log(isNewFile ? 'Nouveau fichier CSV créé' : ' Ligne ajoutée au CSV');
 
-    // ── POST vers ML endpoint ─────────────────────────────
     const mlResult = await postToML(fullBody);
-    console.log('🤖 ML response:', mlResult);
+    console.log(' ML response:', mlResult);
 
     res.status(201).json({
       message: isNewFile ? 'Nouveau fichier créé avec succès' : 'Asset ajouté avec succès',
@@ -237,10 +227,6 @@ router.post('/predicted', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// ============================================================
-// POST /api/assets/add-predicted
-// ============================================================
 router.post('/add', async (req, res) => {
   try {
     const { NUMERO_POLICE, DATE_EFFET, DATE_EXPIRATION, WILAYA, COMMUNE, sum_insured, longueur, largeur } = req.body;
@@ -252,14 +238,12 @@ router.post('/add', async (req, res) => {
 
     const { fullBody, violations, rpa_conforme, rpa_nb_violations, damage_ratio, expected_payout, zone_sismique } = buildFullBody(req.body);
 
-    // ── Écrire dans le CSV ────────────────────────────────
     const rowData = CSV_HEADERS.map(h => fullBody[h] ?? '');
     const { isNewFile, newRow } = appendToCSV(rowData);
-    console.log(isNewFile ? '📁 Nouveau fichier CSV créé' : '📝 Ligne ajoutée au CSV');
+    console.log(isNewFile ? ' Nouveau fichier CSV créé' : ' Ligne ajoutée au CSV');
 
-    // ── POST vers ML endpoint ─────────────────────────────
     const mlResult = await postToML(fullBody);
-    console.log('🤖 ML response:', mlResult);
+    console.log('ML response:', mlResult);
 
     res.status(201).json({
       message: isNewFile ? 'Nouveau fichier créé avec succès' : 'Asset ajouté via prediction avec succès',
@@ -277,9 +261,6 @@ router.post('/add', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// ============================================================
-// GET /api/assets/read
-// ============================================================
 router.get('/read', (req, res) => {
   try {
     if (!fs.existsSync(CSV_PATH)) {

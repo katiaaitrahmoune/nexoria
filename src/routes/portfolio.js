@@ -3,8 +3,6 @@ import { loadPortfolio } from '../controllers/portfolio_loader.js';
 import { ZONE_ACCELERATION, ZONE_ORDER } from '../controllers/rpa_config.js';
 
 const router = express.Router();
-
-// GET /api/portfolio/summary
 router.get('/summary', (req, res) => {
   try {
     const p = loadPortfolio();
@@ -20,7 +18,6 @@ router.get('/summary', (req, res) => {
   }
 });
 
-// GET /api/portfolio/by-zone?year=2025
 router.get('/by-zone', (req, res) => {
   try {
     const year = req.query.year ? parseInt(req.query.year) : null;
@@ -44,7 +41,6 @@ router.get('/by-zone', (req, res) => {
   }
 });
 
-// GET /api/portfolio/contracts?year=2025&wilaya=ALGER&type=Industrielle
 router.get('/contracts', (req, res) => {
   try {
     const { year, wilaya, type, zone } = req.query;
@@ -59,7 +55,7 @@ router.get('/contracts', (req, res) => {
     
     res.json({
       count: contracts.length,
-      contracts: contracts.slice(0, 100), // Limite pour performance
+      contracts: contracts.slice(0, 100), 
       totalCapital: Math.round(contracts.reduce((s, c) => s + c.capital, 0)),
       totalPrime: Math.round(contracts.reduce((s, c) => s + c.prime, 0)),
     });
@@ -68,7 +64,6 @@ router.get('/contracts', (req, res) => {
   }
 });
 
-// GET /api/portfolio/wilayas
 router.get('/wilayas', (req, res) => {
   try {
     const p = loadPortfolio();

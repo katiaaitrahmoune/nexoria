@@ -10,8 +10,6 @@ import {
 import pool from '../config/db.js';
 
 const router = express.Router();
-
-// Helper function to get danger zone from database
 async function getDangerZoneFromDB(wilaya, commune) {
   try {
     const query = `
@@ -36,8 +34,6 @@ function formatDZD(n) {
   return Math.round(n).toLocaleString('fr-DZ');
 }
 
-// POST /api/scenario/simulate
-
 router.post('/simulate', async (req, res) => {
   try {
     const {
@@ -45,7 +41,7 @@ router.post('/simulate', async (req, res) => {
       retentionCapacity = 5_000_000_000,
       year = 2025,
       selectedWilaya = null,
-      selectedCommune = null,  // New: commune from request body
+      selectedCommune = null,  
       selectedType = null,
     } = req.body;
 
@@ -166,7 +162,7 @@ router.post('/simulate', async (req, res) => {
         location: {
           wilaya: selectedWilaya,
           commune: selectedCommune,
-          dangerZone: zones[0]  // The zone fetched from database
+          dangerZone: zones[0]  
         },
         magnitude: mag,
         magnitudeAmplifier: parseFloat(clampedAmplifier.toFixed(3)),

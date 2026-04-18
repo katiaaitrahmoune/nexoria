@@ -2,17 +2,14 @@ import XLSX from 'xlsx';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { RPA_ZONES, PRIME_TO_CAPITAL_RATE } from './rpa_config.js';
-
-// Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ─── Helpers ────────────────────────────────────────────────
 
 function cleanWilaya(raw) {
   if (!raw) return 'INCONNU';
   return String(raw)
-    .replace(/^\d+\s*-\s*/, '')   // "16  - ALGER" → "ALGER"
+    .replace(/^\d+\s*-\s*/, '') 
     .replace(/\s+/g, ' ')
     .trim()
     .toUpperCase();
@@ -39,26 +36,23 @@ function loadSheet(filePath, year) {
     const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
 
     return rows.map((row) => {
-      // Support multiple column naming conventions
       const wilayaRaw = row['Wilaya'] || row['WILAYA'] || row['wilaya'] || '';
       const typeRaw   = row['TYPE'] || row['Type'] || row['type'] || '';
       const commune   = row['commune_du_risque'] || row['COMMUNE'] || row['Commune'] || '';
 
-      // Capital: prefer CAPITAL_ASSURE if present and valid, else estimate from prime
       const capitalRaw = parseNumber(row['CAPITAL_ASSURE'] || row['VALEUR_ASSURÉE'] || row['Capital']);
       const primeRaw   = parseNumber(row['PRIME_NETTE'] || row['Prime'] || row['prime']);
       
       let capital = capitalRaw;
       let hasRealCapital = capitalRaw > 0;
-      
-      // If no real capital, estimate from premium
+    
       if (!hasRealCapital && primeRaw > 0) {
         capital = primeRaw / PRIME_TO_CAPITAL_RATE;
       }
 
       const wilaya = cleanWilaya(wilayaRaw);
       const type   = cleanType(typeRaw);
-      const zone   = RPA_ZONES[wilaya] || 'I';   // fallback Zone I if unknown
+      const zone   = RPA_ZONES[wilaya] || 'I';  
 
       return {
         police:   String(row['NUMERO_POLICE'] || row['PolNo'] || ''),
@@ -68,8 +62,8 @@ function loadSheet(filePath, year) {
         type,
         zone,
         prime:    primeRaw,
-        capital,                          // DZD
-        hasRealCapital,                   // flag: vrai capital ou estimé ?
+        capital,                        
+        hasRealCapital,                   
       };
     }).filter(r => r.prime > 0 || r.capital > 0);
   } catch (e) {
@@ -78,7 +72,6 @@ function loadSheet(filePath, year) {
   }
 }
 
-// ─── Sample data generator for testing ────────────────────
 
 function createSamplePortfolio() {
   const zones = ['0', 'I', 'IIa', 'IIb', 'III'];
@@ -94,11 +87,9 @@ function createSamplePortfolio() {
   const allContracts = [];
   
   for (const year of [2023, 2024, 2025]) {
-    // Different portfolio sizes per year
     const numContracts = year === 2023 ? 500 : (year === 2024 ? 800 : 1000);
     
     for (let i = 0; i < numContracts; i++) {
-      // Select zone with realistic distribution
       let zone;
       const rand = Math.random();
       if (rand < 0.35) zone = 'III';
@@ -107,35 +98,27 @@ function createSamplePortfolio() {
       else if (rand < 0.90) zone = 'I';
       else zone = '0';
       
-      // Select wilaya from zone
       const wilayaList = wilayas[zone];
       const wilaya = wilayaList[Math.floor(Math.random() * wilayaList.length)];
       
-      // Select type with weights
       let type;
       let typeRand = Math.random();
       if (typeRand < 0.65) type = 'Résidentiel';
       else if (typeRand < 0.85) type = 'Commerciale';
       else type = 'Industrielle';
-      
-      // Generate realistic capital
+
       let baseCapital;
       if (type === 'Résidentiel') baseCapital = 8_000_000;
       else if (type === 'Commerciale') baseCapital = 15_000_000;
       else baseCapital = 50_000_000;
-      
-      // Zone multiplier
       const zoneMultipliers = { 'III': 1.5, 'IIb': 1.3, 'IIa': 1.1, 'I': 0.9, '0': 0.7 };
       const multiplier = zoneMultipliers[zone];
-      
-      // Random variation
+
       const variation = 0.5 + Math.random();
       let capital = Math.round(baseCapital * multiplier * variation / 1000) * 1000;
-      
-      // 70% have real capital
+
       const hasRealCapital = Math.random() < 0.7;
-      
-      // Premium at 0.05% rate
+
       const prime = Math.round(capital * 0.0005);
       
       allContracts.push({
@@ -151,8 +134,7 @@ function createSamplePortfolio() {
       });
     }
   }
-  
-  // Pre-aggregate
+
   const byZoneYear = {};
   const byWilaya = {};
   
@@ -174,7 +156,7 @@ function createSamplePortfolio() {
     byWilaya[wKey].capital += c.capital;
   }
   
-  console.log(`✅ Created SAMPLE portfolio: ${allContracts.length} total contracts`);
+  console.log(`Created SAMPLE portfolio: ${allContracts.length} total contracts`);
   
   return {
     contracts: allContracts,
@@ -191,14 +173,11 @@ function createSamplePortfolio() {
   };
 }
 
-// ─── Main loader ────────────────────────────────────────────
 
 let _portfolio = null;
 
 export function loadPortfolio() {
   if (_portfolio) return _portfolio;
-
-  // Adjust path to where your Excel files are
   const dataDir = path.join(__dirname, '../../data');
   const files = [
     { path: path.join(dataDir, 'CATNAT_2023_2025.xlsx'), year: 2023 },
@@ -210,28 +189,21 @@ export function loadPortfolio() {
     const rows = loadSheet(f.path, f.year);
     if (rows.length > 0) {
       allContracts.push(...rows);
-      console.log(`✅ Loaded ${rows.length} contracts from ${f.year}`);
+      console.log(` Loaded ${rows.length} contracts from ${f.year}`);
     }
   }
-
-  // If no data loaded, create sample data for testing
   if (allContracts.length === 0) {
-    console.warn('⚠️  No Excel files found. Creating sample data for testing...');
+    console.warn(' No Excel files found. Creating sample data for testing...');
     _portfolio = createSamplePortfolio();
     return _portfolio;
   }
 
-  // ─── Pre-aggregate for fast API responses ───
-
-  // By zone × year
   const byZoneYear = {};
-  // By wilaya (all years)
+
   const byWilaya = {};
-  // By type × zone
   const byTypeZone = {};
 
   for (const c of allContracts) {
-    // Zone × Year
     const zyKey = `${c.zone}__${c.year}`;
     if (!byZoneYear[zyKey]) {
       byZoneYear[zyKey] = { zone: c.zone, year: c.year, contracts: 0, prime: 0, capital: 0 };
@@ -239,8 +211,6 @@ export function loadPortfolio() {
     byZoneYear[zyKey].contracts++;
     byZoneYear[zyKey].prime += c.prime;
     byZoneYear[zyKey].capital += c.capital;
-
-    // Wilaya (keyed by wilaya+year)
     const wKey = `${c.wilaya}__${c.year}`;
     if (!byWilaya[wKey]) {
       byWilaya[wKey] = { wilaya: c.wilaya, zone: c.zone, year: c.year, contracts: 0, prime: 0, capital: 0 };
@@ -249,7 +219,6 @@ export function loadPortfolio() {
     byWilaya[wKey].prime += c.prime;
     byWilaya[wKey].capital += c.capital;
 
-    // Type × Zone
     const tzKey = `${c.type}__${c.zone}`;
     if (!byTypeZone[tzKey]) {
       byTypeZone[tzKey] = { type: c.type, zone: c.zone, contracts: 0, prime: 0, capital: 0 };

@@ -3,7 +3,7 @@ import pool from "../config/db.js";
 import path  from 'path';
 import  fs from 'fs';
 import { fileURLToPath } from 'url';
-
+import calcuate from './dashboardController.js'
 const router = express.Router();
 
 router.get("/danger-zones", async (req, res) => {
@@ -39,7 +39,7 @@ router.get("/danger-building", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-// UPDATE - Update just the danger level for a specific wilaya
+
 router.put("/danger-zones/level", async (req, res) => {
   try {
     const { wilaya, level } = req.body;
@@ -103,4 +103,5 @@ router.get('/csv', (req, res) => {
   res.download(CSV_PATH, 'assurance.csv');
 });
 
+router.post("/calculer", calculate);
 export default router;
