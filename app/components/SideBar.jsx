@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
+import Image from "next/image";
 const NAV_ITEMS = [
   {
     label: "Dashboard",
@@ -91,13 +91,7 @@ export default function Sidebar() {
     <aside className="fixed top-0 left-0 h-screen w-64 flex flex-col bg-[#1a4a1a] text-white z-40">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-        <div
-          className="flex items-center justify-center rounded-lg shrink-0"
-          style={{ width: 38, height: 38, background: "#e6b800", borderRadius: 8 }}
-        >
-          {/* Fallback letter if no logo.svg */}
-          <span className="text-[#1a4a1a] font-extrabold text-lg leading-none">G</span>
-        </div>
+       <Image src="/logo.svg" alt="GAM Logo" width={32} height={32}  />
         <div>
           <p className="text-sm font-bold leading-tight text-white">GAM Assurance</p>
           <p className="text-xs text-white/50 leading-tight">Risk Management</p>
@@ -137,7 +131,7 @@ export default function Sidebar() {
 
       {/* User Profile */}
       <div className="px-3 py-4 border-t border-white/10 mt-auto">
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/8 transition-all duration-150 group">
+        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl">
           <div className="shrink-0 w-9 h-9 rounded-full bg-amber-600 flex items-center justify-center text-white font-bold text-sm">
             AM
           </div>
@@ -145,12 +139,7 @@ export default function Sidebar() {
             <p className="text-sm font-semibold text-white truncate leading-tight">Abdelhamid Mahi</p>
             <p className="text-xs text-white/45 leading-tight">Admin / Risk Mgr</p>
           </div>
-          <svg
-            className="w-4 h-4 text-white/35 group-hover:text-white/60 transition-colors shrink-0"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
+          
         </button>
       </div>
     </aside>

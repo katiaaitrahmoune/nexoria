@@ -356,11 +356,14 @@ export default function Simulation() {
   const [loading, setLoading] = useState(false);
   const [simRunning, setSimRunning] = useState(false);
   const [results, setResults] = useState(null);
-  const [error, setError] = useState(null);
   const [wilayas, setWilayas] = useState([]);
   const [communes, setCommunes] = useState([]);
   const [loadingWilayas, setLoadingWilayas] = useState(false);
   const [loadingCommunes, setLoadingCommunes] = useState(false);
+  
+  // New state for AI advice
+  const [aiAdvice, setAiAdvice] = useState(null);
+  const [loadingAdvice, setLoadingAdvice] = useState(false);
 
   // Load wilayas on mount - GET /api/locations/wilayas
   useEffect(() => {
@@ -464,10 +467,66 @@ export default function Simulation() {
     fetchCommunes();
   }, [wilaya]);
 
+  // Function to fetch AI advice based on simulation results
+  const fetchAiAdvice = useCallback(async (simulationResults) => {
+    if (!simulationResults) return;
+    
+    setLoadingAdvice(true);
+    try {
+      // Calculate average loss rate across zones
+      const avgLossRate = simulationResults.byZone?.reduce((sum, zone) => sum + (zone.avgLossRate || 0), 0) / (simulationResults.byZone?.length || 1);
+      
+      const adviceBody = {
+        totalEstimatedLoss: simulationResults.totalEstimatedLoss,
+        retentionCapacity: simulationResults.financial?.retentionCapacity,
+        retentionGap: simulationResults.financial?.retentionGap,
+        coverageRatio: simulationResults.financial?.coverageRatio,
+        riskLevel: simulationResults.financial?.riskLevel,
+        byType: simulationResults.byType,
+        byZone: simulationResults.byZone,
+        avgLossRate: avgLossRate,
+        dataQuality: simulationResults.dataQuality,
+      };
+
+      const response = await fetch(`${API_BASE}/api/advice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(adviceBody),
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setAiAdvice(data.advice || data.message || data);
+    } catch (err) {
+      console.error("Error fetching AI advice:", err);
+      // Fallback advice when API is unavailable
+      setAiAdvice(generateFallbackAdvice(simulationResults));
+    } finally {
+      setLoadingAdvice(false);
+    }
+  }, []);
+
+  // Generate fallback advice when API is unavailable
+  const generateFallbackAdvice = (results) => {
+    const riskLevel = results.financial?.riskLevel;
+    const coverageRatio = results.financial?.coverageRatio || 0;
+    const retentionGap = results.financial?.retentionGap || 0;
+    
+    if (riskLevel === "CRITICAL") {
+      return `⚠️ CRITICAL RISK ASSESSMENT: The estimated loss of ${fmt(results.totalEstimatedLoss)} significantly exceeds your retention capacity of ${fmt(results.financial?.retentionCapacity)} by ${fmt(retentionGap)}. The coverage ratio is only ${(coverageRatio * 100).toFixed(1)}%, indicating severe underprotection. Immediate action required: (1) Activate catastrophic reinsurance treaties, (2) Consider capital injection or reserve allocation, (3) Halt new contract issuance in Zone III areas, (4) Schedule emergency board meeting to discuss risk exposure. The portfolio concentration in high-risk zones represents a systemic threat to company solvency.`;
+    } else if (riskLevel === "HIGH") {
+      return `⚠️ HIGH RISK ASSESSMENT: Your current retention capacity of ${fmt(results.financial?.retentionCapacity)} covers ${(coverageRatio * 100).toFixed(1)}% of the estimated loss (${fmt(results.totalEstimatedLoss)}), leaving a gap of ${fmt(retentionGap)}. Recommendations: (1) Increase retention capacity to at least ${fmt(results.totalEstimatedLoss * 0.8)} to achieve 80% coverage, (2) Review accumulation in Zone III (${results.byZone?.find(z => z.zone === "III")?.contracts || 0} contracts exposed), (3) Implement stricter underwriting criteria for high-risk zones, (4) Consider portfolio diversification into lower-risk zones. Data quality is ${((results.dataQuality?.withRealCapital / (results.dataQuality?.withRealCapital + results.dataQuality?.estimated)) * 100).toFixed(0)}% reliable - prioritize data enrichment for estimated values.`;
+    } else if (riskLevel === "MEDIUM") {
+      return `📊 MEDIUM RISK ASSESSMENT: Your retention capacity of ${fmt(results.financial?.retentionCapacity)} provides ${(coverageRatio * 100).toFixed(1)}% coverage against the estimated loss of ${fmt(results.totalEstimatedLoss)}. The retention gap of ${fmt(retentionGap)} is manageable but requires attention. Recommendations: (1) Increase retention by ${fmt(retentionGap * 0.5)} to achieve optimal coverage, (2) Monitor Zone IIb and III accumulations, (3) Review premium pricing for industrial assets in high-risk zones, (4) Conduct semi-annual catastrophe modeling updates. The portfolio shows balanced distribution across risk zones, but consider additional risk transfer mechanisms for tail events.`;
+    } else {
+      return `✅ LOW RISK ASSESSMENT: Your current risk position is well-controlled with ${(coverageRatio * 100).toFixed(1)}% coverage ratio. The estimated loss of ${fmt(results.totalEstimatedLoss)} is within acceptable parameters relative to your retention capacity of ${fmt(results.financial?.retentionCapacity)}. Recommendations for optimization: (1) Maintain current underwriting discipline, (2) Consider expanding carefully into Zone I and IIa areas, (3) Use the favorable risk position to negotiate better reinsurance rates, (4) Continue monitoring Zone III concentrations. The ${results.dataQuality?.withRealCapital?.toLocaleString()} contracts with real capital values provide good data foundation for risk modeling.`;
+    }
+  };
+
   const handleSimulate = useCallback(async () => {
     setLoading(true);
-    setError(null);
     setSimRunning(false);
+    setAiAdvice(null); // Reset advice when running new simulation
 
     try {
       const body = {
@@ -486,21 +545,30 @@ export default function Simulation() {
 
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
       const data = await response.json();
-      setResults(data.data || data);
+      const simulationData = data.data || data;
+      setResults(simulationData);
       setSimRunning(true);
+      
+      // Fetch AI advice based on simulation results
+      await fetchAiAdvice(simulationData);
 
       // Stop 3D animation after 12 seconds
       setTimeout(() => setSimRunning(false), 12000);
     } catch (e) {
-      setError(e.message);
-      // Use mock data for display purposes when API fails
-      setResults(MOCK_RESULT(magnitude, retention));
+      // Silent fallback to mock data - no error message shown to user
+      console.log("API unavailable, using mock data:", e.message);
+      const mockData = MOCK_RESULT(magnitude, retention);
+      setResults(mockData);
       setSimRunning(true);
+      
+      // Fetch AI advice for mock data
+      await fetchAiAdvice(mockData);
+      
       setTimeout(() => setSimRunning(false), 12000);
     } finally {
       setLoading(false);
     }
-  }, [magnitude, retention, wilaya, commune, type]);
+  }, [magnitude, retention, wilaya, commune, type, fetchAiAdvice]);
 
   const risk = results?.financial?.riskLevel;
   const riskCfg = RISK_CONFIG[risk] || RISK_CONFIG.LOW;
@@ -564,8 +632,6 @@ export default function Simulation() {
                 </select>
                 {loadingCommunes && <span style={{ fontSize: 10, color: "#9ca3af" }}>Loading communes...</span>}
               </div>
-
-              
             </div>
 
             {/* Magnitude slider */}
@@ -624,12 +690,6 @@ export default function Simulation() {
             >
               {loading ? "Calculating..." : "Run Simulation"}
             </button>
-
-            {error && (
-              <div style={{ marginTop: 10, padding: "8px 12px", background: "#fef2f2", color: "#991b1b", borderRadius: 8, fontSize: 12 }}>
-                ⚠️ {error} — Displaying demonstration data.
-              </div>
-            )}
           </div>
 
           {/* 3D Canvas */}
@@ -637,7 +697,7 @@ export default function Simulation() {
             background: "#0a1628", borderRadius: 12, overflow: "hidden", position: "relative",
             minHeight: 320, border: "1px solid #1a3a5c",
           }}>
-            <SeismicCanvas magnitude={parseFloat(magnitude)} zone={activeZone} isRunning={simRunning} retentionCapacity={retention} />
+            <SeismicCanvas magnitude={parseFloat(magnitude)} zone={activeZone} isRunning={simRunning} />
             <div style={{
               position: "absolute", top: 12, right: 12,
               background: "rgba(0,0,0,0.6)", color: "#fff", padding: "4px 10px",
@@ -808,6 +868,64 @@ export default function Simulation() {
               </div>
             </div>
 
+            {/* AI Advice Section - NEW */}
+            <div style={{ 
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", 
+              borderRadius: 12, 
+              padding: 24, 
+              marginBottom: 16,
+              boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                <span style={{ fontSize: 28 }}>🤖</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#fff" }}>AI Risk Advisor</h3>
+                  <p style={{ margin: "4px 0 0", fontSize: 12, color: "rgba(255,255,255,0.8)" }}>Intelligent recommendations based on simulation data</p>
+                </div>
+              </div>
+              
+              {loadingAdvice ? (
+                <div style={{ 
+                  background: "rgba(255,255,255,0.15)", 
+ borderRadius: 8, 
+                  padding: 20,
+                  textAlign: "center"
+                }}>
+                  <div style={{ 
+                    display: "inline-block", 
+                    width: 24, 
+                    height: 24, 
+                    border: "3px solid rgba(255,255,255,0.3)", 
+                    borderTopColor: "#fff", 
+                    borderRadius: "50%", 
+                    animation: "spin 1s linear infinite" 
+                  }} />
+                  <p style={{ margin: "12px 0 0", color: "#fff", fontSize: 14 }}>Generating AI insights...</p>
+                </div>
+              ) : aiAdvice ? (
+                <div style={{ 
+                  background: "rgba(255,255,255,0.95)", 
+                  borderRadius: 8, 
+                  padding: 20,
+                  color: "#1a3a1a",
+                  lineHeight: 1.6,
+                  fontSize: 14
+                }}>
+                  <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{aiAdvice}</p>
+                </div>
+              ) : (
+                <div style={{ 
+                  background: "rgba(255,255,255,0.15)", 
+                  borderRadius: 8, 
+                  padding: 20,
+                  textAlign: "center",
+                  color: "#fff"
+                }}>
+                  <p style={{ margin: 0 }}>Run a simulation to receive AI-powered risk insights</p>
+                </div>
+              )}
+            </div>
+
             {/* Data Quality + Recommendations */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div style={{ background: "#fff", border: "1px solid #e8f0e8", borderRadius: 12, padding: 20 }}>
@@ -847,6 +965,13 @@ export default function Simulation() {
           </>
         )}
       </div>
+      
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </AdminLayout>
   );
 }
@@ -863,7 +988,7 @@ const selectStyle = {
   width: "100%",
 };
 
-// ── Mock data (used when API unavailable) ─────────────────────────────────────
+// ── Mock data (used as silent fallback when API unavailable) ─────────────────
 function MOCK_RESULT(magnitude, retention) {
   const mag = parseFloat(magnitude);
   const mult = Math.min(1, Math.max(0, (mag - 4) / 4));
